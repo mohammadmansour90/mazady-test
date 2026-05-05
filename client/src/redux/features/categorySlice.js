@@ -1,0 +1,153 @@
+import {createAsyncThunk, createSlice} from "@reduxjs/toolkit";
+import categoryService from "../services/categoryService";
+import { toast } from "react-toastify";
+
+
+const initialState ={
+    categorys:[],
+    category:null,
+    isError:false,
+    isSuccess:false,
+    isLoading:false,
+    message:"",
+};
+
+
+export const createCategory = createAsyncThunk("category/create", async (formData, thunkAPI) => {
+  try {
+   return await categoryService.createCategory(formData);
+    
+  } catch (error) {
+    const message =
+      (error.response?.data?.message) || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
+
+export const getAllCategory = createAsyncThunk("category/getall", async (formData, thunkAPI) => {
+  try {
+   return await categoryService.getAllCategory(formData);
+    
+  } catch (error) {
+    const message =
+      (error.response?.data?.message) || error.message || error.toString();
+    return thunkAPI.rejectWithValue(message);
+  }
+});
+
+export const updateCategory = createAsyncThunk(
+  "category/update",
+  async ({ id, formData }, thunkAPI) => {
+    try {
+      return await categoryService.updateCategory(id, formData);
+    } catch (error) {
+      const message =
+        error.response?.data?.message || error.message || error.toString();
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+export const deleteCategory = createAsyncThunk(
+  "category/delete",
+  async (id, thunkAPI) => {
+    try {
+      return await categoryService.deleteCategory(id);
+    } catch (error) {
+      const message =
+        error.response?.data?.message || error.message || error.toString();
+      return thunkAPI.rejectWithValue(message);
+    }
+  }
+);
+
+
+
+
+
+const categorySlice = createSlice({
+    name:"category",
+    initialState,
+    reducers:{},
+    extraReducers:(builder) =>{
+        builder
+        //-----------create category ------------------
+        .addCase(createCategory.pending, (state) => {
+                state.isLoading = true;
+              })
+              .addCase(createCategory.fulfilled, (state) => {
+                state.isLoading = false;
+                state.isSuccess = true;
+                state.isError = false;
+                toast.success("category has been created successfully")
+              })
+              .addCase(createCategory.rejected, (state, action) => {
+                state.isLoading = false;
+                state.isError = true;
+                state.message = action.payload;
+                toast.error(action.payload);
+              })
+        
+              //--------------get all category -----------------
+              .addCase(getAllCategory.pending, (state) => {
+                state.isLoading = true;
+              })
+              .addCase(getAllCategory.fulfilled, (state , action) => {
+                state.isLoading = false;
+                state.isSuccess = true;
+                state.isError = false;
+                state.categorys = action.payload
+              })
+              .addCase(getAllCategory.rejected, (state) => {
+                state.isLoading = false;
+                state.isError = true;
+              })
+
+              //----------------update category -------------------------
+
+     .addCase(updateCategory.pending, (state) => {
+    state.isLoading = true;
+  })
+  .addCase(updateCategory.fulfilled, (state, action) => {
+    state.isLoading = false;
+    state.isSuccess = true;
+    state.isError = false;
+    toast.success("Category updated successfully ✅");
+
+    // Optional: update local state
+    state.categorys = state.categorys.map((cat) =>
+      cat._id === action.payload._id ? action.payload : cat
+    );
+  })
+  .addCase(updateCategory.rejected, (state, action) => {
+    state.isLoading = false;
+    state.isError = true;
+    state.message = action.payload;
+    toast.error(action.payload);
+  })
+
+  //------------------delete category --------------------
+    .addCase(deleteCategory.pending, (state) => {
+        state.isLoading = true;
+      })
+      .addCase(deleteCategory.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+        toast.success("Category deleted successfully");
+        // filter locally
+        state.categorys = state.categorys.filter(
+          (cat) => cat._id !== action.meta.arg
+        );
+      })
+      .addCase(deleteCategory.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = true;
+        state.message = action.payload;
+        toast.error(action.payload);
+      });
+    }
+});
+
+
+export default categorySlice.reducer;
